@@ -78,9 +78,9 @@ always @(posedge clk) begin
       ready <= 1'b0;
     end
     `MEM_CMD_WRITE: begin
-      //TODO
-      $display("Mem Write not implemented");
-      $finish();
+      #WRITE_DELAY memory_cells[cell_address] <= i_data;
+      #WRITE_DELAY res_valid <= 1'b1;
+      ready <= 1'b0;
     end
     endcase
   end

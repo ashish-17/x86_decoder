@@ -53,7 +53,6 @@ module register_file(
     always @(negedge i_clk) begin
         if (i_write == 1) begin
             registers[i_ctrl_write] = i_write_val;
-            $display("write %d to %d", i_write_val, registers[i_ctrl_write]);
         end
     end
 
