@@ -105,14 +105,38 @@ module decoder(
     function string decode_mod_reg_rm(input[31:0] data);
         string result = "";
         case(data[15:14]) // Mod bits
-            2'b00: begin
-                
+            2'b00: begin // Indirect addressing mode
+                if (data[10:8] == 3'b100) begin // SIB Addressing mode
+                    if (data[23:22] > 0) // scaling present, TODO - instead of 8 bit displacement use 32 bit
+                        $sformat(result, "%s, (%s, %s*%d+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[23:22], data[31:24]);
+                    else
+                        $sformat(result, "%s, (%s, %s+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[31:24]);
+                end
+                else if (data[10:8] == 3'b101) begin // Displacement mode
+                    result = "read 4 byte displacement..not implemented";
+                end
+                else begin
+                    result = {"(", get_reg(data[10:8]), ")", ", ", get_reg(data[13:11])};
+                end
             end
 
-            2'b01: begin
+            2'b01: begin // Same as above but with 8 bit displacement
+                if (data[10:8] == 3'b100) begin // SIB Addressing mode
+                    if (data[23:22] > 0) // scaling present
+                        $sformat(result, "%s, (%s,%s*%d+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[23:22], data[31:24]);
+                    else
+                        $sformat(result, "%s, (%s, %s+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[31:24]);
+                end
+                else if (data[10:8] == 3'b101) begin // Displacement mode
+                    result = "read 4 byte displacement..not implemented";
+                end
+                else begin
+                    result = {"(", get_reg(data[10:8]), ")", ", ", get_reg(data[13:11])};
+                end
             end
 
-            2'b10: begin
+            2'b10: begin // 32-bit Displacement will be added to reg directly, TODO - For now 32 bit displacement is not supported
+                $sformat(result, "(%s+???)", get_reg(data[10:8]));
             end
 
             2'b11: begin // Direct addressing
