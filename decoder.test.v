@@ -32,11 +32,11 @@ end
 always @(posedge clk) begin
   if (!reset && mem_ready) begin
     mem_valid <= 1;
+    decoder_inp = mem_data_out;
   end
 
   if (!reset && mem_res_valid) begin
     mem_valid <= 0;
-    decoder_inp = mem_data_out;
     $display("Address = %h, data = %h, data 2 = %h", mem_address, mem_data_out, decoder_inp);
 
     mem_address += (`DATA_WIDTH / 8);
@@ -50,7 +50,7 @@ end
 decoder my_decoder(
     .i_clk(clk), 
     .i_reset(reset), 
-    .i_ready(1'b1), 
+    .i_ready(mem_valid), 
     .i_data(decoder_inp), 
     .o_instr_size(instr_size));
 

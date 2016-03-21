@@ -1,5 +1,7 @@
 `include "register_file.v"
 
+`define SIZE_DECODE_REG 48
+
 module decoder(
     input i_clk,
     input i_reset,
@@ -11,24 +13,42 @@ module decoder(
     reg[31:0] opcode;
     reg[1:0] instr_size;
     assign o_instr_size = instr_size;
+    reg[`SIZE_DECODE_REG-1:0] decode_reg;
+    reg[`SIZE_DECODE_REG-1:0] decode_tmp_reg;
+    reg[`SIZE_DECODE_REG-1:0] decode_hold_reg;
+    reg[3:0] count_bytes_in_hold_reg;
 
     initial begin
+        decode_reg = `SIZE_DECODE_REG'b0;
+        decode_tmp_reg = `SIZE_DECODE_REG'b0;
+        decode_hold_reg = `SIZE_DECODE_REG'b0;
+        count_bytes_in_hold_reg = 4'h0;
     end
 
-    always @(posedge i_clk) begin
+    always @(i_reset or i_data) begin
+        
+        if (i_reset) begin
+            decode_reg = `SIZE_DECODE_REG'b0;
+            decode_tmp_reg = `SIZE_DECODE_REG'b0;
+            decode_hold_reg = `SIZE_DECODE_REG'b0;
+            count_bytes_in_hold_reg = 4'h0;
+        end
 
         if (!i_reset && i_ready) begin
-            if (i_data[7:0] != 8'h0f) begin // 1 Byte opcode
+            decode_tmp_reg = i_data;
+            decode_reg = (decode_hold_reg | (decode_tmp_reg<<(8*count_bytes_in_hold_reg)));
+            count_bytes_in_hold_reg = count_bytes_in_hold_reg + 4; // Every time we get a 32 bit input from memory
+            if (decode_reg[7:0] != 8'h0f) begin // 1 Byte opcode
                 opcode = i_data[7:0];
 
-                case(i_data[7:4])
+                case(decode_reg[7:4])
                    4'h0: begin 
-                        if ((i_data[3:0] == 4'h0) || 
-                            (i_data[3:0] == 4'h1) || 
-                            (i_data[3:0] == 4'h2) ||
-                            (i_data[3:0] == 4'h3) ||
-                            (i_data[3:0] == 4'h4) ||
-                            (i_data[3:0] == 4'h5)) begin
+                        if ((decode_reg[3:0] == 4'h0) || 
+                            (decode_reg[3:0] == 4'h1) || 
+                            (decode_reg[3:0] == 4'h2) ||
+                            (decode_reg[3:0] == 4'h3) ||
+                            (decode_reg[3:0] == 4'h4) ||
+                            (decode_reg[3:0] == 4'h5)) begin
                             
                             mnemonic = "add";
                         
@@ -57,14 +77,14 @@ module decoder(
                     end
                     
                     4'h8: begin 
-                        if (i_data[3:0] == 4'h0 ||
-                            i_data[3:0] == 4'h1 || 
-                            i_data[3:0] == 4'h3) begin
+                        if (decode_reg[3:0] == 4'h0 ||
+                            decode_reg[3:0] == 4'h1 || 
+                            decode_reg[3:0] == 4'h3) begin
                         
                             mnemonic = "add";
                         
                         end
-                        else if (i_data[3:0] == 4'hB) begin
+                        else if (decode_reg[3:0] == 4'hB) begin
                             mnemonic = "mov";
                         end
                     end
