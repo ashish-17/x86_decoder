@@ -102,18 +102,18 @@ module decoder(
         end
     end
 
-    function string decode_mod_reg_rm(input[31:0] data);
+    function string decode_mod_reg_rm(input[63:0] data); // Assuming instr length 1 byte and 1 byte for mod-rm and max 4 byte displacement
         string result = "";
         case(data[15:14]) // Mod bits
             2'b00: begin // Indirect addressing mode
                 if (data[10:8] == 3'b100) begin // SIB Addressing mode
-                    if (data[23:22] > 0) // scaling present, TODO - instead of 8 bit displacement use 32 bit
-                        $sformat(result, "%s, (%s, %s*%d+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[23:22], data[31:24]);
+                    if (data[23:22] > 0) // scaling present, TODO - verify 32 but displacement
+                        $sformat(result, "%s, (%s, %s*%d+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[23:22], data[55:24]);
                     else
-                        $sformat(result, "%s, (%s, %s+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[31:24]);
+                        $sformat(result, "%s, (%s, %s+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[55:24]);
                 end
                 else if (data[10:8] == 3'b101) begin // Displacement mode
-                    result = "read 4 byte displacement..not implemented";
+                    $sformat(result, "%x", data[47:16]);
                 end
                 else begin
                     result = {"(", get_reg(data[10:8]), ")", ", ", get_reg(data[13:11])};
@@ -128,15 +128,15 @@ module decoder(
                         $sformat(result, "%s, (%s, %s+%x)", get_reg(data[13:11]), get_reg(data[18:16]), get_reg(data[21:19]), data[31:24]);
                 end
                 else if (data[10:8] == 3'b101) begin // Displacement mode
-                    result = "read 4 byte displacement..not implemented";
+                    $sformat(result, "%x", data[23:16]);
                 end
                 else begin
                     result = {"(", get_reg(data[10:8]), ")", ", ", get_reg(data[13:11])};
                 end
             end
 
-            2'b10: begin // 32-bit Displacement will be added to reg directly, TODO - For now 32 bit displacement is not supported
-                $sformat(result, "(%s+???)", get_reg(data[10:8]));
+            2'b10: begin // 32-bit Displacement will be added to reg directly, TODO - Verify 32 bit displacement
+                $sformat(result, "(%s+%x)", get_reg(data[10:8]), data[47:16]);
             end
 
             2'b11: begin // Direct addressing
@@ -150,7 +150,7 @@ module decoder(
     function [31:0] instruction_length(input[7:0] modrm); // Find instruction length other than opcode length and modrm byte (returns number of bytes)
         reg[31:0] count_sib = 0;
         reg[31:0] count_displacement = 0;
-        case(modrm[8:7]) // mod bits
+        case(modrm[7:6]) // mod bits
             2'b00: begin
                 if (modrm[2:0] == 3'b100) begin
                     count_sib = 31'd1;
