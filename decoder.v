@@ -2,6 +2,10 @@
 
 `define SIZE_DECODE_REG 64
 
+`define DATA_SIZE_8 2'b00
+`define DATA_SIZE_16 2'b01
+`define DATA_SIZE_32 2'b10
+
 module decoder(
     input i_clk,
     input i_reset,
@@ -217,16 +221,79 @@ module decoder(
         instruction_length = count_sib + count_displacement;
     endfunction
 
-    function string get_reg(input[2:0] code);
+    function string get_reg(input[2:0] code, input[1:0] data_size = `DATA_SIZE_32);
         case (code)
-            3'b000: get_reg = "%eax";
-            3'b001: get_reg = "%ecx";
-            3'b010: get_reg = "%edx";
-            3'b011: get_reg = "%ebx";
-            3'b100: get_reg = "%esp";
-            3'b101: get_reg = "%ebp";
-            3'b110: get_reg = "%esi";
-            3'b111: get_reg = "%edi";
+            3'b000: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%al";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%ax";
+                else
+                get_reg = "%eax";
+            end
+
+            3'b001: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%cl";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%cx";
+                else
+                get_reg = "%ecx";
+            end
+
+            3'b010: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%dl";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%dx";
+                else
+                get_reg = "%edx";
+            end
+
+            3'b011: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%bl";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%bx";
+                else
+                get_reg = "%ebx";
+            end
+
+            3'b100: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%ah";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%sp";
+                else
+                get_reg = "%esp";
+            end
+
+            3'b101: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%ch";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%bp";
+                else
+                get_reg = "%ebp";
+            end
+
+            3'b110: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%dh";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%si";
+                else
+                get_reg = "%esi";
+            end
+
+            3'b111: begin
+                if (data_size == `DATA_SIZE_8)
+                    get_reg = "%bh";
+                else if (data_size == `DATA_SIZE_16)
+                    get_reg = "%di";
+                else
+                get_reg = "%edi";
+            end
         endcase
     endfunction
 endmodule
