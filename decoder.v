@@ -147,6 +147,41 @@ module decoder(
         return result;
     endfunction
 
+    function [31:0] instruction_length(input[7:0] modrm); // Find instruction length other than opcode length and modrm byte (returns number of bytes)
+        reg[31:0] count_sib = 0;
+        reg[31:0] count_displacement = 0;
+        case(modrm[8:7]) // mod bits
+            2'b00: begin
+                if (modrm[2:0] == 3'b100) begin
+                    count_sib = 31'd1;
+                    count_displacement = 31'd4;
+                end
+                else if (modrm[2:0] == 3'b101) begin
+                    count_displacement = 31'd4;
+                end
+            end
+
+            2'b01: begin
+                if (modrm[2:0] == 3'b100) begin
+                    count_sib = 31'd1;
+                    count_displacement = 31'd1;
+                end
+                else if (modrm[2:0] == 3'b101) begin
+                    count_displacement = 31'd1;
+                end
+            end
+
+            2'b10: begin
+                count_displacement = 31'd4;
+            end
+
+            2'b11: begin
+            end
+        endcase
+
+        instruction_length = count_sib + count_displacement;
+    endfunction
+
     function string get_reg(input[2:0] code);
         case (code)
             3'b000: get_reg = "%eax";
