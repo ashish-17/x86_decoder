@@ -32,6 +32,8 @@ module decoder(
     reg[2:0] direction;
     reg[3:0] minRequiredBytes;
     reg isImmediate;
+    reg hasStartAddress;
+    reg[31:0] last_address;
 
     initial begin
         decode_reg = `SIZE_DECODE_REG'b0;
@@ -44,6 +46,7 @@ module decoder(
         data_size = `DATA_SIZE_32;
         direction = `DIR_L2R;
         isImmediate = 1'b0;
+        hasStartAddress = 1'b0;
     end
 
     always @(i_reset or i_data) begin
@@ -59,9 +62,16 @@ module decoder(
             data_size = `DATA_SIZE_32;
             direction = `DIR_R2L;
             isImmediate = 1'b0;
+            hasStartAddress = 1'b0;
         end
 
-        if (!i_reset && i_ready) begin
+        if (!i_reset && i_ready && !hasStartAddress) begin
+            hasStartAddress <= 1'b1;
+            last_address <= i_data;
+            $display("Got address");
+        end
+
+        if (!i_reset && i_ready && hasStartAddress) begin
             decode_tmp_reg = i_data;
             decode_reg = (decode_hold_reg | (decode_tmp_reg<<(8*count_bytes_in_hold_reg)));
             decode_hold_reg = decode_reg; // keep a copy here.
@@ -142,22 +152,22 @@ module decoder(
                             isImmediate = 1'b1;
                         end
 
+
                         if (count_bytes_instr < count_bytes_in_decode_reg) begin // This means it has the mod/rm byte
                             minRequiredBytes = (count_bytes_instr + 1 + instruction_length(decode_reg[15:8], data_size, direction, isImmediate));
                            // $display("count = %d, count 2 = %d, min = %d", count_bytes_instr, count_bytes_in_decode_reg, minRequiredBytes); 
-                            
                             if (minRequiredBytes <= count_bytes_in_decode_reg) begin
-                                $display("%x\t%x\t %s %s", i_data, decode_reg, mnemonic, decode_mod_reg_rm(decode_reg, data_size, direction, isImmediate));
+                                $display("%x:\t%s\t %s %s", last_address, get_code(decode_reg, minRequiredBytes), mnemonic, decode_mod_reg_rm(decode_reg, data_size, direction, isImmediate));
                                 decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
                                 decode_hold_reg = decode_reg;
                                 count_bytes_in_decode_reg = count_bytes_in_hold_reg - minRequiredBytes; // No need to do this only need to update the hold reg count val
                                 count_bytes_in_hold_reg = count_bytes_in_decode_reg;
+                                last_address = last_address + minRequiredBytes;
                             end
                         end
                     end
                 end
             end
-
             //$display("%x \t %x \t %s - %s", i_data, opcode, mnemonic, decode_mod_reg_rm(i_data));
         end
         else begin
@@ -165,6 +175,22 @@ module decoder(
         end
     end
    
+    function string get_code(input[`SIZE_DECODE_REG-1:0] data, reg[3:0] num_bytes);
+        string result = "";
+        string tmpStr = "";
+        reg[3:0] byte_index;
+        reg[`SIZE_DECODE_REG-1:0] tmp;
+
+        result = "";
+        for (byte_index = 0; byte_index < num_bytes; byte_index = byte_index + 1) begin
+            tmp = data >> (byte_index * 8);
+            tmpStr = result;
+            $sformat(result, "%s %x", tmpStr, tmp[7:0]);
+        end
+
+        return result;
+    endfunction
+
     //TODO: Not supporting immediate data mode for 00, 01 and 10 cases 
     function string decode_mod_reg_rm(input[63:0] data, reg[1:0] data_size, reg[1:0] direction, reg isImmediate); // Assuming instr length 1 byte and 1 byte for mod-rm and max 4 byte displacement
         string result = "";
