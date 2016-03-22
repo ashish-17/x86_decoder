@@ -1,0 +1,51 @@
+Loading img file: dummy.binhex, file size:          99, cells:           9
+The first word is: 080482f0
+The second word is: 8310c483
+VCD info: dumpfile dump.vcd opened for output.
+Got address
+080482f0:	 83 c4 10               	 add   $0x10,%esp
+080482f3:	 83 c4 12               	 add   $0x12,%esp
+080482f6:	 e8 19 c1 ff ff         	 call  $0xffffc119
+080482fb:	 ff 15 14 12 40 00      	 call  00401214
+08048301:	 83 c4 00               	 add   $0x00,%esp
+08048304:	 03 9d 11 22 33 44      	 add   (%ebp+44332211)
+0804830a:	 28 c4 10               	 sub   $0x10,%ah
+0804830d:	 21 c5 2e               	 and   $0x2e,%ch
+08048310:	 xx                     	 and   $0x2e,%ch
+08048311:	 xx                     	 and   $0x2e,%ch
+08048312:	 xx                     	 and   $0x2e,%ch
+08048313:	 xx                     	 and   $0x2e,%ch
+Loading img file: sample_input.binhex, file size:          99, cells:           9
+The first word is: 080482f0
+The second word is: 8310c483
+VCD info: dumpfile dump.vcd opened for output.
+Got address
+080482f0:	 83 c4 10               	 add   $0x10,%esp
+080482f3:	 83 c4 12               	 add   $0x12,%esp
+080482f6:	 e8 19 c1 ff ff         	 call  $0xffffc119
+080482fb:	 ff 15 14 12 40 00      	 call  00401214
+08048301:	 83 c4 00               	 add   $0x00,%esp
+08048304:	 03 9d 11 22 33 44      	 add   (%ebp+44332211)
+0804830a:	 28 c4 10               	 sub   $0x10,%ah
+0804830d:	 21 c5 2e               	 and   $0x2e,%ch
+08048310:	 xx                     	 and   $0x2e,%ch
+08048311:	 xx                     	 and   $0x2e,%ch
+08048312:	 xx                     	 and   $0x2e,%ch
+08048313:	 xx                     	 and   $0x2e,%ch
+Loading img file: sample_input.binhex, file size:          99, cells:           9
+The first word is: 080482f0
+The second word is: 8310c483
+VCD info: dumpfile dump.vcd opened for output.
+Got address
+080482f0:	 83 c4 10               	 add   $0x10,%esp
+080482f3:	 83 c4 12               	 add   $0x12,%esp
+080482f6:	 e8 19 c1 ff ff         	 call  $0xffffc119
+080482fb:	 ff 15 14 12 40 00      	 call  00401214
+08048301:	 83 c4 00               	 add   $0x00,%esp
+08048304:	 03 9d 11 22 33 44      	 add   (%ebp+44332211)
+0804830a:	 28 c4 10               	 sub   $0x10,%ah
+0804830d:	 21 c5 2e               	 and   $0x2e,%ch
+08048310:	 xx                     	 and   $0x2e,%ch
+08048311:	 xx                     	 and   $0x2e,%ch
+08048312:	 xx                     	 and   $0x2e,%ch
+08048313:	 xx                     	 and   $0x2e,%ch
