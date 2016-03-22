@@ -271,6 +271,82 @@ module decoder(
                             isImmediate = 1'b1;
                         end
                     end
+                    else  if ((decode_reg[7:0] == 8'h07) || 
+                            (decode_reg[7:0] == 8'h17) || 
+                            (decode_reg[7:0] == 8'h1f) ||
+                            (decode_reg[7:0] == 8'h58) ||
+                            (decode_reg[7:0] == 8'h8f) ||
+                            (decode_reg[7:0] == 8'h0f)) begin
+                            
+                        mnemonic = "pop";// TODO: Some opcode handline is missing here
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
+                    else  if ((decode_reg[7:0] == 8'h0e) || 
+                            (decode_reg[7:0] == 8'h16) || 
+                            (decode_reg[7:0] == 8'h1e) ||
+                            (decode_reg[7:0] == 8'h06) ||
+                            (decode_reg[7:0] == 8'h0f) ||
+                            (decode_reg[7:0] == 8'h50)) begin
+                            
+                        mnemonic = "push";// TODO: Some opcode handline is missing here
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
+                    else  if ((decode_reg[7:0] == 8'hfe) || 
+                            (decode_reg[7:0] == 8'h48)) begin
+                            
+                        mnemonic = "dec";// TODO: Some opcode handline is missing here
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
+                    else  if ((decode_reg[7:0] == 8'hf6) || 
+                            (decode_reg[7:0] == 8'hf7)) begin
+                            
+                        mnemonic = "div";// TODO: Some opcode handline is missing here
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
                     else  if ((decode_reg[7:0] == 8'ha0) || 
                             (decode_reg[7:0] == 8'ha1) || 
                             (decode_reg[7:0] == 8'ha2) ||
@@ -371,6 +447,14 @@ module decoder(
                             count_bytes_instr = count_bytes_instr + 2; // 2 byte immediate
                             $sformat(non_modrm, "$0x%x", decode_reg[23:8]);
                         end
+
+                        minRequiredBytes = count_bytes_instr;
+                        process_modrm = 1'b0;
+                    end
+                    else  if (decode_reg[7:0] == 8'hf4) begin
+                            
+                        mnemonic = "hlt";
+                        count_bytes_instr = count_bytes_instr + 1;
 
                         minRequiredBytes = count_bytes_instr;
                         process_modrm = 1'b0;

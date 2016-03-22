@@ -1,0 +1,6 @@
+decoder.test.v.dep: ./memory.v ./register_file.v ./sim.v ./decoder.v ./register_file.v
+decoder.test.run: ./memory.v ./register_file.v ./sim.v ./decoder.v ./register_file.v
+mem.test.v.dep: ./memory.v ./sim.v
+mem.test.run: ./memory.v ./sim.v
+register_file.test.v.dep: ./register_file.v
+register_file.test.run: ./register_file.v
