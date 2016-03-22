@@ -156,6 +156,30 @@ module decoder(
                             isImmediate = 1'b1;
                         end
                     end
+                    else  if ((decode_reg[7:0] == 8'h28) || 
+                            (decode_reg[7:0] == 8'h29) || 
+                            (decode_reg[7:0] == 8'h2a) ||
+                            (decode_reg[7:0] == 8'h2b) ||
+                            (decode_reg[7:0] == 8'h2c) ||
+                            (decode_reg[7:0] == 8'h2d) ||
+                            (decode_reg[7:0] == 8'h80) ||
+                            (decode_reg[7:0] == 8'h81) ||
+                            (decode_reg[7:0] == 8'h83)) begin
+                            
+                        mnemonic = "sub";
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
                     else  if ((decode_reg[7:0] == 8'h20) || 
                             (decode_reg[7:0] == 8'h21) || 
                             (decode_reg[7:0] == 8'h22) ||
@@ -228,6 +252,25 @@ module decoder(
                             isImmediate = 1'b1;
                         end
                     end
+                    else  if ((decode_reg[7:0] == 8'h86) || 
+                            (decode_reg[7:0] == 8'h87) || 
+                            (decode_reg[7:0] == 8'h90) ||
+                            (decode_reg[7:0] == 8'h91)) begin
+                            
+                        mnemonic = "xchg";
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
                     else  if ((decode_reg[7:0] == 8'ha0) || 
                             (decode_reg[7:0] == 8'ha1) || 
                             (decode_reg[7:0] == 8'ha2) ||
@@ -260,6 +303,7 @@ module decoder(
                     else  if (decode_reg[7:0] == 8'h8d) begin
                             
                         mnemonic = "lea";
+
                         count_bytes_instr = count_bytes_instr + 1;
                         if (decode_reg[0] == 0) begin // 8 bit operands
                             data_size = `DATA_SIZE_8;
