@@ -35,6 +35,7 @@ module decoder(
     reg hasStartAddress;
     reg[31:0] last_address;
     reg process_modrm;
+    string non_modrm = "";
 
     initial begin
         decode_reg = `SIZE_DECODE_REG'b0;
@@ -81,7 +82,8 @@ module decoder(
             count_bytes_instr = 4'h0;
             count_bytes_in_prefix = 3'b0;
             process_modrm = 1'b1;
-            
+            non_modrm = "";
+
             /******* Start of Prefix Decoding ********/
             if (decode_reg[7:0] == 8'hf0) begin // LOCK
                 count_bytes_in_prefix = 1;
@@ -154,7 +156,59 @@ module decoder(
                             isImmediate = 1'b1;
                         end
                     end
-                    
+                    else  if ((decode_reg[7:0] == 8'h20) || 
+                            (decode_reg[7:0] == 8'h21) || 
+                            (decode_reg[7:0] == 8'h22) ||
+                            (decode_reg[7:0] == 8'h23) ||
+                            (decode_reg[7:0] == 8'h24) ||
+                            (decode_reg[7:0] == 8'h25) ||
+                            (decode_reg[7:0] == 8'h80) ||
+                            (decode_reg[7:0] == 8'h81) ||
+                            (decode_reg[7:0] == 8'h83)) begin
+                            
+                        mnemonic = "and";
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[0] == 0) begin // 8 bit operands
+                            data_size = `DATA_SIZE_8;
+                        end
+
+                        if (decode_reg[1] == 1) begin // Destination operand is register
+                            direction = `DIR_R2L;
+                        end
+
+                        if (decode_reg[7] == 1) begin // Immediate operand
+                            isImmediate = 1'b1;
+                        end
+                    end
+                    else  if ((decode_reg[7:0] == 8'he8) || 
+                            (decode_reg[7:0] == 8'hff) || 
+                            (decode_reg[7:0] == 8'h9a)) begin
+                            
+                        mnemonic = "call";
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[7:0] == 8'he8) begin
+                            count_bytes_instr = count_bytes_instr + 4;
+                            minRequiredBytes = count_bytes_instr;
+                            process_modrm = 1'b0;
+                            if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                                $sformat(non_modrm, "$0x%x", decode_reg[39:8]);
+                            end
+                        end
+                        else begin
+                            if (decode_reg[0] == 0) begin // 8 bit operands
+                                data_size = `DATA_SIZE_8;
+                            end
+
+                            if (decode_reg[1] == 1) begin // Destination operand is register
+                                direction = `DIR_R2L;
+                            end
+
+                            if (decode_reg[7] == 1) begin // Immediate operand
+                                isImmediate = 1'b1;
+                            end
+                        end
+                    end
+
                     if (process_modrm) begin
                         if (count_bytes_instr < count_bytes_in_decode_reg) begin // This means it has the mod/rm byte
                             minRequiredBytes = (count_bytes_instr + 1 + instruction_length(decode_reg[15:8], data_size, direction, isImmediate));
@@ -170,6 +224,14 @@ module decoder(
                         end
                     end
                     else begin
+                        if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                            $display("%x:\t%s\t %s %s", last_address, get_code(decode_reg, minRequiredBytes), mnemonic, non_modrm);
+                            decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
+                            decode_hold_reg = decode_reg;
+                            count_bytes_in_decode_reg = count_bytes_in_hold_reg - minRequiredBytes; // No need to do this only need to update the hold reg count val
+                            count_bytes_in_hold_reg = count_bytes_in_decode_reg;
+                            last_address = last_address + minRequiredBytes;
+                        end
                     end
                 end
             end
