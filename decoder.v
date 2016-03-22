@@ -34,6 +34,7 @@ module decoder(
     reg isImmediate;
     reg hasStartAddress;
     reg[31:0] last_address;
+    reg process_modrm;
 
     initial begin
         decode_reg = `SIZE_DECODE_REG'b0;
@@ -79,6 +80,7 @@ module decoder(
             count_bytes_in_hold_reg = count_bytes_in_decode_reg;
             count_bytes_instr = 4'h0;
             count_bytes_in_prefix = 3'b0;
+            process_modrm = 1'b1;
             
             /******* Start of Prefix Decoding ********/
             if (decode_reg[7:0] == 8'hf0) begin // LOCK
@@ -151,11 +153,12 @@ module decoder(
                         if (decode_reg[7] == 1) begin // Immediate operand
                             isImmediate = 1'b1;
                         end
-
-
+                    end
+                    
+                    if (process_modrm) begin
                         if (count_bytes_instr < count_bytes_in_decode_reg) begin // This means it has the mod/rm byte
                             minRequiredBytes = (count_bytes_instr + 1 + instruction_length(decode_reg[15:8], data_size, direction, isImmediate));
-                           // $display("count = %d, count 2 = %d, min = %d", count_bytes_instr, count_bytes_in_decode_reg, minRequiredBytes); 
+                            
                             if (minRequiredBytes <= count_bytes_in_decode_reg) begin
                                 $display("%x:\t%s\t %s %s", last_address, get_code(decode_reg, minRequiredBytes), mnemonic, decode_mod_reg_rm(decode_reg, data_size, direction, isImmediate));
                                 decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
@@ -166,9 +169,10 @@ module decoder(
                             end
                         end
                     end
+                    else begin
+                    end
                 end
             end
-            //$display("%x \t %x \t %s - %s", i_data, opcode, mnemonic, decode_mod_reg_rm(i_data));
         end
         else begin
             instr_size <= 1'bx;
