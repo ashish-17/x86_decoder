@@ -345,6 +345,36 @@ module decoder(
                             end
                         end
                     end
+                    else  if ((decode_reg[7:0] == 8'hea) || 
+                            (decode_reg[7:0] == 8'heb) || 
+                            (decode_reg[7:0] == 8'he9)) begin
+                            
+                        mnemonic = "jmp"; // TODO: handle 8/16/32 bit jmp for now all are 32
+                        count_bytes_instr = count_bytes_instr + 1;
+                        count_bytes_instr = count_bytes_instr + 4;
+                        minRequiredBytes = count_bytes_instr;
+                        process_modrm = 1'b0;
+                        if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                            $sformat(non_modrm, "$0x%x", decode_reg[39:8]);
+                        end
+                    end
+                    else  if ((decode_reg[7:0] == 8'hc2) || 
+                            (decode_reg[7:0] == 8'hc3) || 
+                            (decode_reg[7:0] == 8'hca) || 
+                            (decode_reg[7:0] == 8'hcb)) begin
+                            
+                        mnemonic = "ret";
+                        count_bytes_instr = count_bytes_instr + 1;
+                        if (decode_reg[7:0] == 8'hc3 || decode_reg[7:0] == 8'hcb) begin
+                        end
+                        else begin
+                            count_bytes_instr = count_bytes_instr + 2; // 2 byte immediate
+                            $sformat(non_modrm, "$0x%x", decode_reg[23:8]);
+                        end
+
+                        minRequiredBytes = count_bytes_instr;
+                        process_modrm = 1'b0;
+                    end
 
                     if (process_modrm) begin
                         if (count_bytes_instr < count_bytes_in_decode_reg) begin // This means it has the mod/rm byte
