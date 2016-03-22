@@ -24,8 +24,8 @@ wire mem_res_valid;
 
 integer tests;
 initial begin
-    $dumpfile("dump.vcd");
-    $dumpvars;
+    //$dumpfile("dump.vcd");
+   // $dumpvars;
     tests = 0;
 end
 
@@ -37,13 +37,13 @@ always @(posedge clk) begin
 
   if (!reset && mem_res_valid) begin
     mem_valid <= 0;
-    $display("Address = %h, data = %h, data 2 = %h", mem_address, mem_data_out, decoder_inp);
+   // $display("Address = %h, data = %h, data 2 = %h", mem_address, mem_data_out, decoder_inp);
 
     mem_address += (`DATA_WIDTH / 8);
-    tests += 1;
+    //tests += 1;
 
-    if (tests > 20)
-        #20 $finish;
+    //if (tests > 20)
+      //  #20 $finish;
   end
 end
 
