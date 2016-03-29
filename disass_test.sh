@@ -13,8 +13,9 @@ fi
 
 TMPFILE=`mktemp`
 
-objdump -j .text -d $1 |grep "^ " | sed -e "s/#.\+//g" -e "s/<.\+>//g"   > ${TMPFILE}
+#objdump -j .text -d $1 |grep "^ " | sed -e "s/#.\+//g" -e "s/<.\+>//g"   > ${TMPFILE}
+objdump -j .text -d $1 |grep "^ " | sed -e "s/#.\+//g" -e "s/<.\+>//g"   > ${TARGET}
 
-diff ${TMPFILE} ${TARGET}
+#diff ${TMPFILE} ${TARGET}
 
-rm ${TMPFILE}
+#rm ${TMPFILE}

@@ -465,23 +465,15 @@ module decoder(
                             minRequiredBytes = (count_bytes_instr + 1 + instruction_length(decode_reg[15:8], data_size, direction, isImmediate));
                             
                             if (minRequiredBytes <= count_bytes_in_decode_reg) begin
-                                $display("%x:\t%-24s\t %-5s %s", last_address, get_code(decode_reg, minRequiredBytes), mnemonic, decode_mod_reg_rm(decode_reg, data_size, direction, isImmediate));
-                                decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
-                                decode_hold_reg = decode_reg;
-                                count_bytes_in_decode_reg = count_bytes_in_hold_reg - minRequiredBytes; // No need to do this only need to update the hold reg count val
-                                count_bytes_in_hold_reg = count_bytes_in_decode_reg;
-                                last_address = last_address + minRequiredBytes;
+                                display(last_address, get_code(decode_reg, minRequiredBytes), mnemonic, decode_mod_reg_rm(decode_reg, data_size, direction, isImmediate));
+                                prepare_for_next_instr(decode_reg, decode_hold_reg, minRequiredBytes, count_bytes_in_hold_reg, count_bytes_in_decode_reg, last_address);
                             end
                         end
                     end
                     else begin
                         if (count_bytes_instr <= count_bytes_in_decode_reg) begin
-                            $display("%x:\t%-24s\t %-5s %s", last_address, get_code(decode_reg, minRequiredBytes), mnemonic, non_modrm);
-                            decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
-                            decode_hold_reg = decode_reg;
-                            count_bytes_in_decode_reg = count_bytes_in_hold_reg - minRequiredBytes; // No need to do this only need to update the hold reg count val
-                            count_bytes_in_hold_reg = count_bytes_in_decode_reg;
-                            last_address = last_address + minRequiredBytes;
+                            display(last_address, get_code(decode_reg, minRequiredBytes), mnemonic, non_modrm);
+                            prepare_for_next_instr(decode_reg, decode_hold_reg, minRequiredBytes, count_bytes_in_hold_reg, count_bytes_in_decode_reg, last_address);
                         end
                     end
                 end
@@ -491,7 +483,34 @@ module decoder(
             instr_size <= 1'bx;
         end
     end
-   
+ 
+    // Shift data in decode register by appropriate bytes and tranfer the same to the hold register to be processed with next instruction
+    // and simulataneously update the respective byte counters.
+    task prepare_for_next_instr(
+        inout[`SIZE_DECODE_REG - 1: 0] decode_reg, 
+        inout[`SIZE_DECODE_REG - 1: 0] decode_hold_reg, 
+        reg[3:0] minRequiredBytes, 
+        inout[3:0] count_bytes_in_hold_reg,
+        inout[3:0] count_bytes_in_decode_reg, 
+        inout[31:0] last_address);
+    
+        decode_reg = (decode_hold_reg >> (8*minRequiredBytes));
+        decode_hold_reg = decode_reg;
+        count_bytes_in_decode_reg = count_bytes_in_hold_reg - minRequiredBytes; // No need to do this only need to update the hold reg count val
+        count_bytes_in_hold_reg = count_bytes_in_decode_reg;
+        last_address = last_address + minRequiredBytes;
+
+    endtask
+
+    task display(
+        input[31:0] instr_address, 
+        string bytes, 
+        string opcode, 
+        string operands);
+        
+        $display("%x:\t%-24s\t %-5s %s", last_address, bytes, opcode, operands);
+    endtask
+
     function string get_code(input[`SIZE_DECODE_REG-1:0] data, reg[3:0] num_bytes);
         string result = "";
         string tmpStr = "";
