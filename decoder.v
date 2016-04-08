@@ -33,6 +33,8 @@ module decoder(
     reg[3:0] minRequiredBytes;
     reg isImmediate;
     reg hasStartAddress;
+    reg isRegImplicit;
+    reg[2:0] implicitRegVal;
     reg[31:0] last_address;
     reg process_modrm;
     string non_modrm = "";
@@ -49,6 +51,8 @@ module decoder(
         direction = `DIR_L2R;
         isImmediate = 1'b0;
         hasStartAddress = 1'b0;
+        isRegImplicit = 1'b0;
+        implicitRegVal = 3'b000;
     end
 
     always @(i_reset or i_data) begin
@@ -65,6 +69,8 @@ module decoder(
             direction = `DIR_R2L;
             isImmediate = 1'b0;
             hasStartAddress = 1'b0;
+            isRegImplicit = 1'b0;
+            implicitRegVal = 3'b000;
         end
 
         if (!i_reset && i_ready && !hasStartAddress) begin
@@ -83,6 +89,10 @@ module decoder(
             count_bytes_in_prefix = 3'b0;
             process_modrm = 1'b1;
             non_modrm = "";
+            direction = `DIR_R2L;
+            isImmediate = 1'b0;
+            isRegImplicit = 1'b0;
+            implicitRegVal = 3'b000;
 
             /******* Start of Prefix Decoding ********/
             if (decode_reg[7:0] == 8'hf0) begin // LOCK
@@ -276,19 +286,24 @@ module decoder(
                             (decode_reg[7:0] == 8'h1f) ||
                             (decode_reg[7:0] == 8'h58) ||
                             (decode_reg[7:0] == 8'h8f) ||
-                            (decode_reg[7:0] == 8'h0f)) begin
-                            
+                            (decode_reg[7:0] == 8'h0f ||
+                            (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b1))) begin
+                           
                         mnemonic = "pop";// TODO: Some opcode handline is missing here
                         count_bytes_instr = count_bytes_instr + 1;
-                        if (decode_reg[0] == 0) begin // 8 bit operands
+                        
+                        if (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b1) begin
+                            isRegImplicit = 1'b1;
+                            implicitRegVal = decode_reg[2:0];
+                            minRequiredBytes = count_bytes_instr;
+                        end
+                        else if (decode_reg[0] == 0) begin // 8 bit operands
                             data_size = `DATA_SIZE_8;
                         end
-
-                        if (decode_reg[1] == 1) begin // Destination operand is register
+                        else if (decode_reg[1] == 1) begin // Destination operand is register
                             direction = `DIR_R2L;
                         end
-
-                        if (decode_reg[7] == 1) begin // Immediate operand
+                        else if (decode_reg[7] == 1) begin // Immediate operand
                             isImmediate = 1'b1;
                         end
                     end
@@ -459,8 +474,14 @@ module decoder(
                         minRequiredBytes = count_bytes_instr;
                         process_modrm = 1'b0;
                     end
-
-                    if (process_modrm) begin
+                    
+                    if (isRegImplicit == 1'b1) begin
+                        if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                            display(last_address, get_code(decode_reg, minRequiredBytes), mnemonic, get_reg(implicitRegVal));
+                            prepare_for_next_instr(decode_reg, decode_hold_reg, minRequiredBytes, count_bytes_in_hold_reg, count_bytes_in_decode_reg, last_address);
+                        end
+                    end
+                    else if (process_modrm) begin
                         if (count_bytes_instr < count_bytes_in_decode_reg) begin // This means it has the mod/rm byte
                             minRequiredBytes = (count_bytes_instr + 1 + instruction_length(decode_reg[15:8], data_size, direction, isImmediate));
                             
