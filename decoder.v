@@ -286,8 +286,8 @@ module decoder(
                             (decode_reg[7:0] == 8'h1f) ||
                             (decode_reg[7:0] == 8'h58) ||
                             (decode_reg[7:0] == 8'h8f) ||
-                            (decode_reg[7:0] == 8'h0f ||
-                            (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b1))) begin
+                            (decode_reg[7:0] == 8'h0f) ||
+                            (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b1)) begin
                            
                         mnemonic = "pop";// TODO: Some opcode handline is missing here
                         count_bytes_instr = count_bytes_instr + 1;
@@ -312,20 +312,33 @@ module decoder(
                             (decode_reg[7:0] == 8'h1e) ||
                             (decode_reg[7:0] == 8'h06) ||
                             (decode_reg[7:0] == 8'h0f) ||
-                            (decode_reg[7:0] == 8'h50)) begin
+                            (decode_reg[7:0] == 8'h68) ||
+                            (decode_reg[7:0] == 8'h6A) ||
+                            (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b0)) begin
                             
                         mnemonic = "push";// TODO: Some opcode handline is missing here
                         count_bytes_instr = count_bytes_instr + 1;
-                        if (decode_reg[0] == 0) begin // 8 bit operands
-                            data_size = `DATA_SIZE_8;
+                       
+                        if (decode_reg[7:4] == 4'h5 && decode_reg[3] == 1'b0) begin
+                            isRegImplicit = 1'b1;
+                            implicitRegVal = decode_reg[2:0];
+                            minRequiredBytes = count_bytes_instr;
                         end
-
-                        if (decode_reg[1] == 1) begin // Destination operand is register
-                            direction = `DIR_R2L;
+                        else if (decode_reg[7:0] == 8'h68) begin
+                            count_bytes_instr = count_bytes_instr + 4;
+                            minRequiredBytes = count_bytes_instr;
+                            process_modrm = 1'b0;
+                            if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                                $sformat(non_modrm, "$0x%x", decode_reg[39:8]);
+                            end
                         end
-
-                        if (decode_reg[7] == 1) begin // Immediate operand
-                            isImmediate = 1'b1;
+                        else if (decode_reg[7:0] == 8'h6A) begin
+                            count_bytes_instr = count_bytes_instr + 2;
+                            minRequiredBytes = count_bytes_instr;
+                            process_modrm = 1'b0;
+                            if (count_bytes_instr <= count_bytes_in_decode_reg) begin
+                                $sformat(non_modrm, "$0x%x", decode_reg[23:8]);
+                            end
                         end
                     end
                     else  if ((decode_reg[7:0] == 8'hfe) || 
@@ -387,9 +400,9 @@ module decoder(
                             direction = `DIR_R2L;
                         end
 
-                        if (decode_reg[7] == 1) begin // Immediate operand
+                        /*if (decode_reg[7] == 1) begin // Immediate operand
                             isImmediate = 1'b1;
-                        end
+                        end*/
                     end
                     else  if (decode_reg[7:0] == 8'h8d) begin
                             
@@ -474,6 +487,9 @@ module decoder(
                         minRequiredBytes = count_bytes_instr;
                         process_modrm = 1'b0;
                     end
+                    else begin
+                        $display("Unidentified instr %x", decode_reg);
+                    end
                     
                     if (isRegImplicit == 1'b1) begin
                         if (count_bytes_instr <= count_bytes_in_decode_reg) begin
@@ -497,6 +513,8 @@ module decoder(
                             prepare_for_next_instr(decode_reg, decode_hold_reg, minRequiredBytes, count_bytes_in_hold_reg, count_bytes_in_decode_reg, last_address);
                         end
                     end
+
+                    $display("decode reg curr val %x", decode_reg);
                 end
             end
         end
